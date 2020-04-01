@@ -51,6 +51,7 @@ from tensorflow.python.ops import array_ops
 from tensorflow.python.ops import init_ops
 from tensorflow.python.ops import nn_ops
 from tensorflow.python.ops import variable_scope
+from nets.attention_module import se_block, cbam_module
 
 
 def vgg_arg_scope(weight_decay=0.0005):
@@ -141,6 +142,8 @@ def vgg_16(inputs,
            is_training=True,
            dropout_keep_prob=0.5,
            spatial_squeeze=True,
+           is_se=False,
+           is_cbam=False,
            scope='vgg_16'):
     """Oxford Net VGG 16-Layers version D Example.
 
@@ -169,21 +172,47 @@ def vgg_16(inputs,
             net = layers_lib.repeat(
                 inputs, 2, layers.conv2d, 64, [3, 3], scope='conv1')
             net = layers_lib.max_pool2d(net, [2, 2], scope='pool1')
+            if is_se:
+                net = se_block(net, name="se_vgg_1")
+            if is_cbam:
+                net = cbam_module(net, "1")
+
             net = layers_lib.repeat(net, 2, layers.conv2d, 128, [3, 3], scope='conv2')
             net = layers_lib.max_pool2d(net, [2, 2], scope='pool2')
+            if is_se:
+                net = se_block(net, name="se_vgg_2")
+            if is_cbam:
+                net = cbam_module(net, "2")
+
             net = layers_lib.repeat(net, 3, layers.conv2d, 256, [3, 3], scope='conv3')
             net = layers_lib.max_pool2d(net, [2, 2], scope='pool3')
+            if is_se:
+                net = se_block(net, name="se_vgg_3")
+            if is_cbam:
+                net = cbam_module(net, "3")
             net = layers_lib.repeat(net, 3, layers.conv2d, 512, [3, 3], scope='conv4')
             net = layers_lib.max_pool2d(net, [2, 2], scope='pool4')
+            if is_se:
+                net = se_block(net, name="se_vgg_4")
+            if is_cbam:
+                net = cbam_module(net, "4")
+
             net = layers_lib.repeat(net, 3, layers.conv2d, 512, [3, 3], scope='conv5')
             net = layers_lib.max_pool2d(net, [2, 2], scope='pool5')
+            if is_se:
+                net = se_block(net, name="se_vgg_5")
+            if is_cbam:
+                net = cbam_module(net, "5")
+
             # Use conv2d instead of fully_connected layers.
             net = layers.conv2d(net, 4096, [7, 7], padding='VALID', scope='fc6')
-            net = layers_lib.dropout(
-                net, dropout_keep_prob, is_training=is_training, scope='dropout6')
+            if is_training:
+                net = layers_lib.dropout(
+                    net, dropout_keep_prob, is_training=is_training, scope='dropout6')
             net = layers.conv2d(net, 4096, [1, 1], scope='fc7')
-            net = layers_lib.dropout(
-                net, dropout_keep_prob, is_training=is_training, scope='dropout7')
+            if is_training:
+                net = layers_lib.dropout(
+                    net, dropout_keep_prob, is_training=is_training, scope='dropout7')
             net = layers.conv2d(
                 net,
                 num_classes, [1, 1],

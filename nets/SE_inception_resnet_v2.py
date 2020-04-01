@@ -1,5 +1,5 @@
 import tensorflow as tf
-from nets.attention_module import se_block
+from nets.attention_module import se_block, cbam_module
 
 slim = tf.contrib.slim
 
@@ -28,6 +28,9 @@ def block35(net, scale=1.0, activation_fn=tf.nn.relu, scope=None, reuse=None, at
         if attention_module == 'se_block':
             scaled_up = se_block(scaled_up, 'se_block')
 
+        # Cbam
+        if attention_module == "cbam":
+            scaled_up = cbam_module(scaled_up, "Improved_CBAM_35")
 
         net += scaled_up
         if activation_fn:
@@ -60,6 +63,10 @@ def block17(net, scale=1.0, activation_fn=tf.nn.relu, scope=None, reuse=None, at
         if attention_module == 'se_block':
             scaled_up = se_block(scaled_up, 'se_block')
 
+        # Cbam
+        if attention_module == "cbam":
+            scaled_up = cbam_module(scaled_up, "Improved_CBAM_17")
+
         net += scaled_up
         if activation_fn:
             net = activation_fn(net)
@@ -91,6 +98,9 @@ def block8(net, scale=1.0, activation_fn=tf.nn.relu, scope=None, reuse=None, att
         if attention_module == 'se_block':
             scaled_up = se_block(scaled_up, 'se_block')
 
+        # Cbam
+        if attention_module == "cbam":
+            scaled_up = cbam_module(scaled_up, "Improved_CBAM_8")
 
         net += scaled_up
         if activation_fn:
@@ -145,6 +155,7 @@ def inception_resnet_v2_base(inputs,
     with tf.variable_scope(scope, 'InceptionResnetV2', [inputs]):
         with slim.arg_scope([slim.conv2d, slim.max_pool2d, slim.avg_pool2d],
                             stride=1, padding='SAME'):
+            # Stem
             # 149 x 149 x 32
             net = slim.conv2d(inputs, 32, 3, stride=2, padding=padding,
                               scope='Conv2d_1a_3x3')
@@ -198,6 +209,7 @@ def inception_resnet_v2_base(inputs,
 
             if add_and_check_final('Mixed_5b', net): return net, end_points
 
+            # 10* InRes-A
             # TODO(alemi): Register intermediate endpoints
             net = slim.repeat(net, 10, block35, scale=0.17,
                               activation_fn=activation_fn, attention_module=attention_module)
@@ -227,6 +239,7 @@ def inception_resnet_v2_base(inputs,
 
             if add_and_check_final('Mixed_6a', net): return net, end_points
 
+            # 20* InRes-B
             # TODO(alemi): register intermediate endpoints
             with slim.arg_scope([slim.conv2d], rate=2 if use_atrous else 1):
                 net = slim.repeat(net, 20, block17, scale=0.10,
@@ -266,6 +279,7 @@ def inception_resnet_v2_base(inputs,
 
             if add_and_check_final('Mixed_7a', net): return net, end_points
 
+            # 9* InRes-C
             # TODO(alemi): register intermediate endpoints
             net = slim.repeat(net, 9, block8, scale=0.20, activation_fn=activation_fn,
                               attention_module=attention_module)
@@ -284,8 +298,7 @@ def inception_resnet_v2(inputs, num_classes=61, is_training=True,
                         scope='InceptionResnetV2',
                         create_aux_logits=True,
                         activation_fn=tf.nn.relu,
-                        attention_module=None,
-                        is_train=True):
+                        attention_module=None):
     """Creates the Inception Resnet V2 model.
     Args:
       inputs: a 4-D tensor of size [batch_size, height, width, 3].
@@ -317,7 +330,7 @@ def inception_resnet_v2(inputs, num_classes=61, is_training=True,
             net, end_points = inception_resnet_v2_base(inputs, scope=scope,
                                                        activation_fn=activation_fn,
                                                        attention_module=attention_module)
-
+            # 辅助分类器，用于反向传播梯度
             if create_aux_logits and num_classes:
                 with tf.variable_scope('AuxLogits'):
                     aux = end_points['PreAuxLogits']
@@ -344,10 +357,8 @@ def inception_resnet_v2(inputs, num_classes=61, is_training=True,
                 if not num_classes:
                     return net, end_points
                 net = slim.flatten(net)
-                # 训练时dropout
-                if is_train:
-                    net = slim.dropout(net, dropout_keep_prob, is_training=is_training,
-                                       scope='Dropout')
+                net = slim.dropout(net, dropout_keep_prob, is_training=is_training,
+                                    scope='Dropout')
                 end_points['PreLogitsFlatten'] = net
                 logits = slim.fully_connected(net, num_classes, activation_fn=None,
                                               scope='Logits')
@@ -361,7 +372,7 @@ inception_resnet_v2.default_image_size = 299
 
 
 def inception_resnet_v2_arg_scope(weight_decay=0.00004,
-                                  batch_norm_decay=0.9997,
+                                  batch_norm_decay=0.99,  # 原为0.9997
                                   batch_norm_epsilon=0.001,
                                   activation_fn=tf.nn.relu):
     """Returns the scope with the default parameters for inception_resnet_v2.

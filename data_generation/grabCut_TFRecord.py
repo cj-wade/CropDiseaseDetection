@@ -1,3 +1,4 @@
+import cv2
 import tensorflow as tf
 import numpy as np
 import os
@@ -26,13 +27,13 @@ with open(train_source_label, 'r', encoding='UTF-8') as f:
 with open(validation_source_label, 'r', encoding='UTF-8') as f:
     validation_load_dict = json.load(f)
 
-
 # 输出的TF格式文件
-train_file =  "D:\各种学科资料\病虫害识别\数据集\AI挑战赛\AgriculturalDisease_trainingset\\train.tfrecords"
-validation_file = "D:\各种学科资料\病虫害识别\数据集\AI挑战赛\AgriculturalDisease_validationset\\validation.tfrecords"
+train_file = "D:\各种学科资料\病虫害识别\数据集\AI挑战赛\AgriculturalDisease_trainingset\\train_grabcut.tfrecords"
+validation_file = "D:\各种学科资料\病虫害识别\数据集\AI挑战赛\AgriculturalDisease_validationset\\validation_grabcut.tfrecords"
 # 用于写入TFRecord文件
 train_writer = tf.python_io.TFRecordWriter(train_file)
 validation_writer = tf.python_io.TFRecordWriter(validation_file)
+
 
 # 找到图片id对应的label
 def find_label(image, dict):
@@ -40,7 +41,6 @@ def find_label(image, dict):
         if item['image_id'] == image:
             return item['disease_class']
     print('can not find id')
-
 
 
 # 生成字符型的属性
@@ -52,6 +52,7 @@ def _bytes_feature(value):
 def _int64_feature(value):
     return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
 
+
 if __name__ == '__main__':
 
     count = 0
@@ -59,14 +60,25 @@ if __name__ == '__main__':
     # 逐个读取文件夹中的文件
     for file in os.listdir(train_source_dir):
         # 对应图片
-        img = Image.open(train_source_dir + file)
-        img = img.resize((150, 150), Image.ANTIALIAS)
+        img = cv2.imdecode(np.fromfile(train_source_dir + file, dtype=np.uint8), cv2.IMREAD_COLOR)
+        img = cv2.resize(img, (224, 224))
+
+        # 前背景分离
+        mask = np.zeros(img.shape[:2], np.uint8)
+        bgdModel = np.zeros((1, 65), np.float64)
+        fgdModel = np.zeros((1, 65), np.float64)
+        rect = (1, 1, 220, 220)
+        cv2.grabCut(img, mask, rect, bgdModel, fgdModel, 10, cv2.GC_INIT_WITH_RECT)
+        mask2 = np.where((mask == 2) | (mask == 0), 0, 1).astype('uint8')
+        img = img * mask2[:, :, np.newaxis]
+
         # 图片对应标签（int）
         label = find_label(file, train_load_dict)
         # 将图片转换为字符串
         image_raw = img.tobytes()
         # 获取图像尺寸
-        (img_W, img_H) = img.size
+        img_W = 224
+        img_H = 224
         # 图像通道数
         channels = 3
 
@@ -81,21 +93,31 @@ if __name__ == '__main__':
         # 将一个Example写入TFRecord文件中
         train_writer.write(example.SerializeToString())
         count = count + 1
-        if count % 1000 == 0:
+        if count % 100 == 0:
             print(count)
     train_writer.close()
 
-
     for file in os.listdir(validation_source_dir):
         # 对应图片
-        img = Image.open(validation_source_dir + file)
-        img = img.resize((150, 150), Image.ANTIALIAS)
+        img = cv2.imdecode(np.fromfile(validation_source_dir + file, dtype=np.uint8), cv2.IMREAD_COLOR)
+        img = cv2.resize(img, (224, 224))
+
+        # 前背景分离
+        mask = np.zeros(img.shape[:2], np.uint8)
+        bgdModel = np.zeros((1, 65), np.float64)
+        fgdModel = np.zeros((1, 65), np.float64)
+        rect = (1, 1, 220, 220)
+        cv2.grabCut(img, mask, rect, bgdModel, fgdModel, 10, cv2.GC_INIT_WITH_RECT)
+        mask2 = np.where((mask == 2) | (mask == 0), 0, 1).astype('uint8')
+        img = img * mask2[:, :, np.newaxis]
+
         # 图片对应标签（int）
         label = find_label(file, validation_load_dict)
         # 将图片转换为字符串
         image_raw = img.tobytes()
         # 获取图像尺寸
-        (img_W, img_H) = img.size
+        img_W = 224
+        img_H = 224
         # 图像通道数
         channels = 3
 
@@ -110,6 +132,6 @@ if __name__ == '__main__':
         # 将一个Example写入TFRecord文件中
         validation_writer.write(example.SerializeToString())
         count = count + 1
-        if count % 1000 == 0:
+        if count % 100 == 0:
             print(count)
     validation_writer.close()

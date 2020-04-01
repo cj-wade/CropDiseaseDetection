@@ -208,6 +208,7 @@ def resnet_v1(inputs,
         if global_pool:
           # Global average pooling.
           net = math_ops.reduce_mean(net, [1, 2], name='pool5', keepdims=True)
+        # 分类层
         if num_classes is not None:
           net = layers.conv2d(
               net,
@@ -275,7 +276,7 @@ def resnet_v1_50(inputs,
 
 
 def resnet_v1_101(inputs,
-                  num_classes=None,
+                  num_classes=61,
                   is_training=True,
                   global_pool=True,
                   output_stride=None,

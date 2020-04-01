@@ -45,7 +45,8 @@ from tensorflow.python.ops import array_ops
 from tensorflow.python.ops import init_ops
 from tensorflow.python.ops import nn_ops
 from tensorflow.python.ops import variable_scope
-from nets.attention_module import se_block
+from nets.attention_module import se_block, cbam_spatial_block, cbam_channel_block, cbam_module, se_cbam_spatial_module, reverse_cbam
+from nets.stn import spatial_transformer_network
 
 trunc_normal = lambda stddev: init_ops.truncated_normal_initializer(0.0, stddev)
 class_num = 61
@@ -69,7 +70,12 @@ def alexnet_v2(inputs,
                spatial_squeeze=True,
                scope='alexnet_v2',
                is_se=False,
-               is_train=True):
+               is_ccb=False,
+               is_csb=False,
+               is_cbam=False,
+               is_re_cbam=False,
+               is_se_cbam=False,
+               is_stn=False):
     """AlexNet version 2.
 
     Described in: http://arxiv.org/pdf/1404.5997v2.pdf
@@ -102,29 +108,55 @@ def alexnet_v2(inputs,
         with arg_scope(
                 [layers.conv2d, layers_lib.fully_connected, layers_lib.max_pool2d],
                 outputs_collections=[end_points_collection]):
+            if is_stn:
+                inputs = spatial_transformer_network(inputs)
             net = layers.conv2d(
-                inputs, 64, [11, 11], 4, padding='VALID', scope='alex_conv1')
-            net = layers_lib.max_pool2d(net, [3, 3], 2, scope='alex_pool1')
-
-            # SE_block
+                inputs, 64, [11, 11], 4, padding='VALID', scope='alex_conv1')  # 55*55
             if is_se:
-                net = se_block(net, 'SE_block_Alexnet_1')
+                net = se_block(net, name="se_alexnet1")
+            if is_ccb:
+                net = cbam_channel_block(net, name="1")
+            if is_csb:
+                net = cbam_spatial_block(net, name="1")
+            if is_cbam:
+                net = cbam_module(net, name="1")
+            if is_se_cbam:
+                net = se_cbam_spatial_module(net, name="1")
+            if is_re_cbam:
+                net = reverse_cbam(net, name="1")
+            net = layers_lib.max_pool2d(net, [3, 3], 2, scope='alex_pool1')  # 27*27
 
-            net = layers.conv2d(net, 192, [5, 5], scope='alex_conv2')
-            net = layers_lib.max_pool2d(net, [3, 3], 2, scope='alex_pool2')
-
-            # SE_block
+            net = layers.conv2d(net, 192, [5, 5], scope='alex_conv2')  # 13*13
             if is_se:
-                net = se_block(net, 'SE_block_Alexnet_2')
+                net = se_block(net, name="se_alexnet2")
+            if is_ccb:
+                net = cbam_channel_block(net, name="2")
+            if is_csb:
+                net = cbam_spatial_block(net, name="2")
+            if is_cbam:
+                net = cbam_module(net, name="2")
+            if is_se_cbam:
+                net = se_cbam_spatial_module(net, name="2")
+            if is_re_cbam:
+                net = reverse_cbam(net, name="2")
+            net = layers_lib.max_pool2d(net, [3, 3], 2, scope='alex_pool2')  # 13*13
 
             net = layers.conv2d(net, 384, [3, 3], scope='alex_conv3')
             net = layers.conv2d(net, 384, [3, 3], scope='alex_conv4')
             net = layers.conv2d(net, 256, [3, 3], scope='alex_conv5')
-            net = layers_lib.max_pool2d(net, [3, 3], 2, scope='alex_pool5')
-
-            # SE_block
             if is_se:
-                net = se_block(net, 'SE_block_Alexnet_3')
+                net = se_block(net, name="se_alexnet3")
+            if is_ccb:
+                net = cbam_channel_block(net, name="3")
+            if is_csb:
+                net = cbam_spatial_block(net, name="3")
+            if is_cbam:
+                net = cbam_module(net, name="3")
+            if is_se_cbam:
+                net = se_cbam_spatial_module(net, name="3")
+            if is_re_cbam:
+                net = reverse_cbam(net, name="3")
+            net = layers_lib.max_pool2d(net, [3, 3], 2, scope='alex_pool5')  # 6*6
 
             # Use conv2d instead of fully_connected layers.
             with arg_scope(
@@ -132,15 +164,11 @@ def alexnet_v2(inputs,
                     weights_initializer=trunc_normal(0.005),
                     biases_initializer=init_ops.constant_initializer(0.1)):
                 net = layers.conv2d(net, 4096, [5, 5], padding='VALID', scope='alex_fc6')
-                # 训练时dropout
-                if is_train:
-                    net = layers_lib.dropout(
-                        net, dropout_keep_prob, is_training=is_training, scope='alex_dropout6')
+                net = layers_lib.dropout(
+                    net, dropout_keep_prob, is_training=is_training, scope='alex_dropout6')
                 net = layers.conv2d(net, 4096, [1, 1], scope='alex_fc7')
-                # 训练时dropout
-                if is_train:
-                    net = layers_lib.dropout(
-                        net, dropout_keep_prob, is_training=is_training, scope='alex_dropout7')
+                net = layers_lib.dropout(
+                    net, dropout_keep_prob, is_training=is_training, scope='alex_dropout7')
                 net = layers.conv2d(
                     net,
                     num_classes, [1, 1],

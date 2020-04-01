@@ -33,12 +33,14 @@ def parser(record):
 image_size = 224  # 定义输入层图片的大小，这里是224*224
 batch_size = 32  # 定义组合数据batch的大小
 shuffle_buffer = 2048  # 定义随机打乱数据时buffer的大小
-NUM_EPOCHS = 11  # 指定数据集重复的次数
+NUM_EPOCHS = 0  # 指定数据集重复的次数
 
 
 def get_train_dataset():
     train_files = tf.train.match_filenames_once(
-        "D:\各种学科资料\病虫害识别\数据集\AI挑战赛\AgriculturalDisease_trainingset\\train.tfrecords")
+        "/mnt/PyCharm_Project_1/DataSet/train.tfrecords")
+    # D:\Python\PycharmProjects\CropDiseaseDetection\DataSet\\train.tfrecords
+    # /mnt/PyCharm_Project_1/DataSet/train.tfrecords
     # 定义读取训练数据的数据集
     dataset = tf.data.TFRecordDataset(train_files)
     dataset = dataset.map(parser)
@@ -50,17 +52,19 @@ def get_train_dataset():
         )
     )
 
-    # 先随机打乱(buffer=10000),再组合成batch(32一个batch)
+    # 先随机打乱(buffer=1000),再组合成batch(32一个batch)
     dataset = dataset.shuffle(shuffle_buffer).batch(batch_size)
     dataset = dataset.repeat()
-
     return dataset
 
 
 def get_test_dataset(is_train=True):
     test_files = tf.train.match_filenames_once(
-        "D:\各种学科资料\病虫害识别\数据集\AI挑战赛\AgriculturalDisease_validationset\\validation.tfrecords")
+        "/mnt/PyCharm_Project_1/DataSet/validation.tfrecords")
+    # /mnt/PyCharm_Project_1/DataSet/validation.tfrecords
+    # D:\Python\PycharmProjects\CropDiseaseDetection\DataSet\\validation.tfrecords
     # 定义读取训练数据的数据集
+
     dataset = tf.data.TFRecordDataset(test_files)
     dataset = dataset.map(parser)
 

@@ -3,12 +3,10 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 
+
 def PreWork():
     # 对预处理的数据进行可视化，查看预处理的效果
-    IMG_W = 224
-    IMG_H = 224
-    BATCH_SIZE = 32
-    CAPACITY = 64
+    BATCH_SIZE = 3
     dataset = data_generate.get_train_dataset()
     iterator = dataset.make_initializable_iterator()
     image_batch, label_batch = iterator.get_next()
@@ -20,7 +18,7 @@ def PreWork():
         sess.run(iterator.initializer)
         i = 0
         try:
-            while i < 3:
+            while i < 1:
                 # 提取出两个batch的图片并可视化。
                 img, label = sess.run([image_batch, label_batch])  # 在会话中取出img和label
                 # img = tf.cast(img, tf.uint8)
@@ -37,12 +35,16 @@ def PreWork():
                 for j in np.arange(BATCH_SIZE):
                     # np.arange()函数返回一个有终点和起点的固定步长的排列
                     print(label[j])
-                    print(img.shape)
+                    print(img)
                     plt.imshow(img[j, :, :, :])
                     plt.show()
                 i += 1
+                print(i)
+                print(label.shape[0])
         except tf.errors.OutOfRangeError:
             print('done!')
+        print(i)
+
 
 if __name__ == '__main__':
     PreWork()

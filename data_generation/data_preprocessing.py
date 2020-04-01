@@ -1,12 +1,12 @@
 import tensorflow as tf
 import numpy as np
-
+import cv2
 
 # 给图片加入高斯噪声
 def gaussian_noise_layer(input_image, std):
     noise = tf.random_normal(shape=tf.shape(input_image), mean=0.0, stddev=std, dtype=tf.float32)
-    noise_image = tf.cast(input_image, tf.float32) + noise
-    noise_image = tf.clip_by_value(noise_image, 0, 10)
+    noise_image = tf.cast(input_image, tf.float32) + noise  # noise/255.0
+    noise_image = tf.clip_by_value(noise_image, 0, 10)  # tf.clip_by_value(noise_image, 0, 1.0)
     return noise_image
 
 
@@ -52,30 +52,30 @@ def parse_data(image, image_size, is_train):
         :param image:
         :param image_size:
     """
+    # 图片归一化
     if image.dtype != tf.float32:
         image = tf.image.convert_image_dtype(image, dtype=tf.float32)
 
-    # 数据预处理，或者数据增强，这一步根据需要自由发挥
-
-    if not is_train:
-        # 随机提取patch
-        image = tf.image.resize_images(image, [image_size, image_size])
+    # # 数据预处理，或者数据增强，这一步根据需要自由发挥
+    #
+    # if not is_train:
+    #     # 随机提取patch
+    #     image = tf.image.resize_images(image, [image_size, image_size])
 
     if is_train:
         # 随机提取patch
-        image = tf.image.resize_images(image, [image_size, image_size], method=np.random.randint(4))
+        image = tf.image.resize_images(image, [image_size, image_size], method=np.random.randint(4)) # 仅改变图片大小，保留完整图片
+        # image = tf.image.resize_image_with_crop_or_pad(image, 150, 150) # 随机裁剪
         # 随机水平翻转图像
         image = tf.image.random_flip_left_right(image)
         # 随机调整图片色彩
         # image = distort_color(image, color_ordering=np.random.randint(5))
-        # 加噪声
-        # image = gaussian_noise_layer(image, 0.5)
 
+    # image = tf.image.resize_image_with_crop_or_pad(image, image_size, image_size)
+    # 加噪声
+    # image = gaussian_noise_layer(image, std=0.5)  # 测试(0.25), 0.5， 1， 2， 3， 5, 10
     # 标准化，即三通道都减去均值
-    image = tf.image.per_image_standardization(image)
-
-    # # 图像归一化
-    # if not is_train:
-    #     image = tf.cast(image, tf.float32) / 255.0
+    # image = tf.image.per_image_standardization(image)
+    # tf.clip_by_value(image, 0.0, 1.0)
 
     return image
