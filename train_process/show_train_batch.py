@@ -20,6 +20,7 @@ def PreWork():
         try:
             while i < 1:
                 # 提取出两个batch的图片并可视化。
+                print("yep!")
                 img, label = sess.run([image_batch, label_batch])  # 在会话中取出img和label
                 # img = tf.cast(img, tf.uint8)
                 '''

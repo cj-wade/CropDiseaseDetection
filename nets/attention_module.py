@@ -1,7 +1,7 @@
 import tensorflow as tf
 from nets.stn import spatial_transformer_network
 from nets.cbam import convolutional_block_attention_module as cbam_module
-from nets.cbam import cbam_channel_block, cbam_spatial_block, se_cbam_spatial_module, reverse_cbam
+from nets.cbam import cbam_channel_block, cbam_spatial_block, se_cbam_spatial_module, reverse_cbam, improved_cbam
 
 slim = tf.contrib.slim
 import numpy as np

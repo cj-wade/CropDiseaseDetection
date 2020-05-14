@@ -5,7 +5,6 @@ from nets.attention_module import se_block, spatial_attention, cbam_module, cbam
 
 class_num = 61
 
-
 def inference(inputs, is_se=False, is_ccb=False, is_csb=False, is_cbam=False, is_se_cbam=False, is_re_cbam=False):
     # 第一层卷积
     net = slim.conv2d(inputs, 32, [5, 5], padding='SAME')

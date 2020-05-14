@@ -1,4 +1,5 @@
 import sys
+
 cur = '/mnt/PyCharm_Project_1'
 sys.path.append(cur)
 print("success")
@@ -13,33 +14,30 @@ from time import *
 import numpy as np
 import os
 from train_process.checkmate import BestCheckpointSaver
-import tensorflow.contrib.slim as slim
-
+# import tensorflow.contrib.slim as slim
 num_classes = 61
 img_w = img_h = 224
-lr = 0.01
+lr = 0.001
 learning_decay = 0.94
 decay_steps = 992
 train_epoch = 40001
 display_step = 100
 val_step = 992
 # save_step = 20000
-save_path = ["/mnt/PyCharm_Project_1/crop_model/Lenet/normal",
-             "/mnt/PyCharm_Project_1/crop_model/new/normal_Alexnet",
+save_path = ["/mnt/PyCharm_Project_1/crop_model/Lenet/strong",
+             "/mnt/PyCharm_Project_1/crop_model/AlexNet",
              "/mnt/PyCharm_Project_1/crop_model/Lenet/CSB",
              "/mnt/PyCharm_Project_1/crop_model/test/Re_CBAM_Alexnet",
-             "D:\Python\PycharmProjects\crop_base\crop_model\InResNet_V2",
-             "D:\Python\PycharmProjects\CropDiseaseDetection\crop_model",
+             "/mnt/PyCharm_Project_1/crop_model/InResNet_V2/strong",
+             "/mnt/PyCharm_Project_1/crop_model/test/Re_CBAM_Alexnet",
              "/mnt/PyCharm_Project_1/crop_model/test/Vgg",
              "/mnt/PyCharm_Project_1/crop_model/test/SE_Vgg",
              "/mnt/PyCharm_Project_1/crop_model/new/Densenet",
              "/mnt/PyCharm_Project_1/crop_model/test/CBAM_Densenet"]
-net_id = 4
+net_id = 1
 MODEL_SAVE_PATH = save_path[net_id]
 # MODEL_NAME = 'crop_test_InResNet_V2_model.ckpt'
-TB_SAVE_PATH = "/mnt/PyCharm_Project_1/crop_model/Lenet/CSB/TB"
-
-
+TB_SAVE_PATH = "D:\\Python\\PycharmProjects\\CropDiseaseDetection\\crop_model\\AlexNet\\TB"
 
 if __name__ == '__main__':
     val_acc = 0
@@ -76,10 +74,10 @@ if __name__ == '__main__':
     learning_rate = tf.train.exponential_decay(
         lr, global_step, decay_steps=decay_steps, decay_rate=learning_decay, staircase=True)
     # 训练步骤
-    train_step = tf.train.GradientDescentOptimizer(learning_rate).minimize(loss, global_step)
+    # train_step = tf.train.GradientDescentOptimizer(learning_rate).minimize(loss, global_step)
     # train_step = tf.train.MomentumOptimizer(learning_rate, 0.9).minimize(loss, global_step)
     # train_step = tf.train.RMSPropOptimizer(learning_rate, 0.9).minimize(loss, global_step)
-    # train_step = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(loss, global_step)
+    train_step = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(loss, global_step)
 
     # 准确率计算
     accuracy = accuracy(pred, y)

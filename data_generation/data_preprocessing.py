@@ -17,26 +17,26 @@ def distort_color(image, color_ordering=0):
         image = tf.image.random_saturation(image, lower=0.5, upper=1.5)
         image = tf.image.random_hue(image, max_delta=0.2)
         image = tf.image.random_contrast(image, lower=0.5, upper=1.5)
-    elif color_ordering == 1:
-        image = tf.image.random_saturation(image, lower=0.5, upper=1.5)
-        image = tf.image.random_brightness(image, max_delta=32. / 255.)
-        image = tf.image.random_contrast(image, lower=0.5, upper=1.5)
-        image = tf.image.random_hue(image, max_delta=0.2)
-    elif color_ordering == 2:
-        image = tf.image.random_brightness(image, max_delta=32. / 255.)
-        image = tf.image.random_contrast(image, lower=0.5, upper=1.5)
-        image = tf.image.random_saturation(image, lower=0.5, upper=1.5)
-        image = tf.image.random_hue(image, max_delta=0.2)
-    elif color_ordering == 3:
-        image = tf.image.random_contrast(image, lower=0.5, upper=1.5)
-        image = tf.image.random_brightness(image, max_delta=32. / 255.)
-        image = tf.image.random_saturation(image, lower=0.5, upper=1.5)
-        image = tf.image.random_hue(image, max_delta=0.2)
-    else:
-        image = tf.image.random_hue(image, max_delta=0.2)
-        image = tf.image.random_contrast(image, lower=0.5, upper=1.5)
-        image = tf.image.random_brightness(image, max_delta=32. / 255.)
-        image = tf.image.random_saturation(image, lower=0.5, upper=1.5)
+    # elif color_ordering == 1:
+    #     image = tf.image.random_saturation(image, lower=0.5, upper=1.5)
+    #     image = tf.image.random_brightness(image, max_delta=32. / 255.)
+    #     image = tf.image.random_contrast(image, lower=0.5, upper=1.5)
+    #     image = tf.image.random_hue(image, max_delta=0.2)
+    # elif color_ordering == 2:
+    #     image = tf.image.random_brightness(image, max_delta=32. / 255.)
+    #     image = tf.image.random_contrast(image, lower=0.5, upper=1.5)
+    #     image = tf.image.random_saturation(image, lower=0.5, upper=1.5)
+    #     image = tf.image.random_hue(image, max_delta=0.2)
+    # elif color_ordering == 3:
+    #     image = tf.image.random_contrast(image, lower=0.5, upper=1.5)
+    #     image = tf.image.random_brightness(image, max_delta=32. / 255.)
+    #     image = tf.image.random_saturation(image, lower=0.5, upper=1.5)
+    #     image = tf.image.random_hue(image, max_delta=0.2)
+    # else:
+    #     image = tf.image.random_hue(image, max_delta=0.2)
+    #     image = tf.image.random_contrast(image, lower=0.5, upper=1.5)
+    #     image = tf.image.random_brightness(image, max_delta=32. / 255.)
+    #     image = tf.image.random_saturation(image, lower=0.5, upper=1.5)
     return tf.clip_by_value(image, 0.0, 1.0)
 
 
@@ -65,12 +65,17 @@ def parse_data(image, image_size, is_train):
     if is_train:
         # 随机提取patch
         image = tf.image.resize_images(image, [image_size, image_size], method=np.random.randint(4)) # 仅改变图片大小，保留完整图片
-        # image = tf.image.resize_image_with_crop_or_pad(image, 150, 150) # 随机裁剪
         # 随机水平翻转图像
         image = tf.image.random_flip_left_right(image)
+        image = tf.image.random_flip_up_down(image)
+        # 随机裁剪
+        # image = tf.image.resize_image_with_crop_or_pad(image, 150, 150)
         # 随机调整图片色彩
-        # image = distort_color(image, color_ordering=np.random.randint(5))
+        image = distort_color(image)
+        # 加噪声
+        # image = gaussian_noise_layer(image, std=10/255)  # 测试(0.25), 0.5， 1， 2， 3， 5, 10
 
+    # image = tf.image.resize_images(image, [image_size, image_size])  # 仅改变图片大小，保留完整图片
     # image = tf.image.resize_image_with_crop_or_pad(image, image_size, image_size)
     # 加噪声
     # image = gaussian_noise_layer(image, std=0.5)  # 测试(0.25), 0.5， 1， 2， 3， 5, 10

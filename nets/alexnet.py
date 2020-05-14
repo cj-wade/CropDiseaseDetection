@@ -45,7 +45,7 @@ from tensorflow.python.ops import array_ops
 from tensorflow.python.ops import init_ops
 from tensorflow.python.ops import nn_ops
 from tensorflow.python.ops import variable_scope
-from nets.attention_module import se_block, cbam_spatial_block, cbam_channel_block, cbam_module, se_cbam_spatial_module, reverse_cbam
+from nets.attention_module import se_block, cbam_spatial_block, cbam_channel_block, cbam_module, se_cbam_spatial_module, reverse_cbam, improved_cbam
 from nets.stn import spatial_transformer_network
 
 trunc_normal = lambda stddev: init_ops.truncated_normal_initializer(0.0, stddev)
@@ -75,6 +75,7 @@ def alexnet_v2(inputs,
                is_cbam=False,
                is_re_cbam=False,
                is_se_cbam=False,
+               is_i_cbam=False,
                is_stn=False):
     """AlexNet version 2.
 
@@ -124,6 +125,8 @@ def alexnet_v2(inputs,
                 net = se_cbam_spatial_module(net, name="1")
             if is_re_cbam:
                 net = reverse_cbam(net, name="1")
+            if is_i_cbam:
+                net = improved_cbam(net, name="1")
             net = layers_lib.max_pool2d(net, [3, 3], 2, scope='alex_pool1')  # 27*27
 
             net = layers.conv2d(net, 192, [5, 5], scope='alex_conv2')  # 13*13
@@ -139,6 +142,8 @@ def alexnet_v2(inputs,
                 net = se_cbam_spatial_module(net, name="2")
             if is_re_cbam:
                 net = reverse_cbam(net, name="2")
+            if is_i_cbam:
+                net = improved_cbam(net, name="2")
             net = layers_lib.max_pool2d(net, [3, 3], 2, scope='alex_pool2')  # 13*13
 
             net = layers.conv2d(net, 384, [3, 3], scope='alex_conv3')
@@ -156,7 +161,9 @@ def alexnet_v2(inputs,
                 net = se_cbam_spatial_module(net, name="3")
             if is_re_cbam:
                 net = reverse_cbam(net, name="3")
-            net = layers_lib.max_pool2d(net, [3, 3], 2, scope='alex_pool5')  # 6*6
+            if is_i_cbam:
+                net = improved_cbam(net, name="3")
+            net = layers_lib.max_pool2d(net, [3, 3], 2, scope='alex_pool5')  # 32*5*5*256
 
             # Use conv2d instead of fully_connected layers.
             with arg_scope(
@@ -165,11 +172,11 @@ def alexnet_v2(inputs,
                     biases_initializer=init_ops.constant_initializer(0.1)):
                 net = layers.conv2d(net, 4096, [5, 5], padding='VALID', scope='alex_fc6')
                 net = layers_lib.dropout(
-                    net, dropout_keep_prob, is_training=is_training, scope='alex_dropout6')
+                    net, dropout_keep_prob, is_training=is_training, scope='alex_dropout6')  # 32*1*1*4096
                 net = layers.conv2d(net, 4096, [1, 1], scope='alex_fc7')
                 net = layers_lib.dropout(
-                    net, dropout_keep_prob, is_training=is_training, scope='alex_dropout7')
-                net = layers.conv2d(
+                    net, dropout_keep_prob, is_training=is_training, scope='alex_dropout7')  # 32*1*1*4096
+                net = layers.conv2d(    # 32*1*1*61
                     net,
                     num_classes, [1, 1],
                     activation_fn=None,

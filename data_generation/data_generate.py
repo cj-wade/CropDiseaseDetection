@@ -16,9 +16,6 @@ def parser(record):
         features={
             'image_raw': tf.FixedLenFeature([], tf.string),
             'label': tf.FixedLenFeature([], tf.int64),
-            # 'img_W': tf.FixedLenFeature([], tf.int64),
-            # 'img_H': tf.FixedLenFeature([], tf.int64),
-            # 'channels': tf.FixedLenFeature([], tf.int64)
         })
 
     # 从原始图像中解析出像素矩阵，并根据图像尺寸还原图像
@@ -52,7 +49,7 @@ def get_train_dataset():
         )
     )
 
-    # 先随机打乱(buffer=1000),再组合成batch(32一个batch)
+    # 先随机打乱(buffer=2048),再组合成batch(32一个batch)
     dataset = dataset.shuffle(shuffle_buffer).batch(batch_size)
     dataset = dataset.repeat()
     return dataset

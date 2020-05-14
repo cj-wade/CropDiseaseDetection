@@ -279,7 +279,7 @@ def inception_resnet_v2_base(inputs,
 
             if add_and_check_final('Mixed_7a', net): return net, end_points
 
-            # 9* InRes-C
+            # 10* InRes-C
             # TODO(alemi): register intermediate endpoints
             net = slim.repeat(net, 9, block8, scale=0.20, activation_fn=activation_fn,
                               attention_module=attention_module)
@@ -292,7 +292,8 @@ def inception_resnet_v2_base(inputs,
         raise ValueError('final_endpoint (%s) not recognized', final_endpoint)
 
 
-def inception_resnet_v2(inputs, num_classes=61, is_training=True,
+def inception_resnet_v2(inputs, num_classes=61, is_train=True,
+                        is_training=True,
                         dropout_keep_prob=0.8,
                         reuse=None,
                         scope='InceptionResnetV2',

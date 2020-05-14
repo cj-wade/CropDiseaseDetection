@@ -1,12 +1,12 @@
-# import sys
-# cur = '/mnt/PyCharm_Project_1'
-# sys.path.append(cur)
+import sys
+cur = '/mnt/PyCharm_Project_1'
+sys.path.append(cur)
 print("success")
 from time import *
 import tensorflow as tf
 from data_generation.data_generate import get_test_dataset
 from nets.net_choice import net
-from train_process import checkmate, transfer_learning_train
+from train_process import checkmate, train_with_epoch
 import numpy as np
 from heapq import nlargest
 from validation_process.crop_disease_type import crop_class
@@ -18,8 +18,8 @@ import tensorflow.contrib.slim as slim
 Model_SAVE_PATH = "D:\Python\PycharmProjects\CropDiseaseDetection\crop_model\Lenet"
 
 num_classes = 61
-img_w = 224
-img_h = 224
+img_w = img_h = 224
+
 
 if __name__ == '__main__':
     # 程序开始
@@ -36,9 +36,9 @@ if __name__ == '__main__':
 
         # 定义预测结果
         training_flag = tf.placeholder(tf.bool)
-        # logit = net(transfer_learning_train.net_id, image_batch, is_train=training_flag)
-        with slim.arg_scope(InRes_V2.inception_resnet_v2_arg_scope()):
-            logit, _ = InRes_V2.inception_resnet_v2(image_batch, is_training=training_flag)
+        logit = net(train_with_epoch.net_id, image_batch, is_train=training_flag)
+        # with slim.arg_scope(InRes_V2.inception_resnet_v2_arg_scope()):
+        #     logit, _ = InRes_V2.inception_resnet_v2(image_batch, is_train=training_flag)
         # 初始化saver
         saver = tf.train.Saver()
 
@@ -69,7 +69,7 @@ if __name__ == '__main__':
             #     saver.restore(sess, ckpt.model_checkpoint_path)
             #     # 通过文件名得到模型保存时迭代的轮数
             #     global_step = ckpt.model_checkpoint_path.split('/')[-1].split('-')[-1]
-            best_checkpoint = checkmate.get_best_checkpoint(transfer_learning_train.MODEL_SAVE_PATH, select_maximum_value=True)
+            best_checkpoint = checkmate.get_best_checkpoint(train_with_epoch.MODEL_SAVE_PATH, select_maximum_value=True)
             global_step = best_checkpoint.split('/')[-1].split('-')[-1]
             saver.restore(sess, best_checkpoint)
             print("开始测试！！！")

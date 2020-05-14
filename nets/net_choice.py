@@ -17,7 +17,8 @@ def net(net_id, x, is_train=True):
     elif net_id == 4:  # InResNet_V2
         pred, _ = SE_inception_resnet_v2.inception_resnet_v2(x, is_training=is_train)
     elif net_id == 5:  # attention_InResNet_V2
-        pred, _ = SE_inception_resnet_v2.inception_resnet_v2(x, attention_module='cbam', is_training=is_train)
+        with slim.arg_scope(SE_inception_resnet_v2.inception_resnet_v2_arg_scope()):
+            pred, _ = SE_inception_resnet_v2.inception_resnet_v2(x, attention_module='cbam', is_training=is_train)
     elif net_id == 6:  # Vgg
         with slim.arg_scope(vgg.vgg_arg_scope()):
             pred, _ = vgg.vgg_16(x, is_training=is_train)

@@ -1,15 +1,7 @@
-n = input()
-global count
-count = 1
+import tensorflow as tf
 
+noise = tf.random_normal(shape=[10, 10, 3], mean=0.0, stddev=0.25, dtype=tf.float32)
 
-def inner():
-    # 说明使用的count变量为全局的不是局部的
-    global count
-    print(count)
-    count = 5
-    print(count)
-
-
-inner()
-print(count)
+with tf.Session() as sess:
+    sess.run(noise)
+    print(noise)
